@@ -164,10 +164,39 @@ export const getWeather = async (province, city) => {
 
     RUN_TIME_STORAGE[`${province}_${city}`] = cloneDeep(result)
 
+   // console.log(result)
+
     return result
   }
   console.error('天气情况获取失败', res)
   return {}
+}
+
+export const getCoinRate = async () => {
+
+
+  // 读取缓存
+  const coin_url = 'https://apis.tianapi.com/fxrate/index?key=2ee4f75d0114b66224ee24098e1c8cbe&fromcoin=HKD&tocoin=CNY&money=1'
+
+  const coin_res = await axios.get(coin_url, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  }).catch((err) => err)
+
+  //console.log('return information:',coin_res)
+
+  if (coin_res.status === 200 && coin_res.data && coin_res.data.code == 200) {
+    const rate = coin_res.data.result.money
+
+    if (!rate) {
+      console.error('汇率情况: 找不到汇率信息, 获取失败')
+      return;
+    }
+    return rate
+  }
+  console.error('汇率情况: 找不到汇率信息, 获取失败')
+  return;
 }
 
 /**
@@ -905,6 +934,8 @@ export const getAggregatedData = async () => {
       value: await getTianApiNetworkHot(config.TIAN_API && config.TIAN_API.networkHotType),
       color: getColor(),
     }]
+
+    const coinRate = await getCoinRate()
     // 集成所需信息
     const wxTemplateParams = [
       { name: toLowerLine('toName'), value: user.name, color: getColor() },
@@ -929,6 +960,7 @@ export const getAggregatedData = async () => {
       { name: toLowerLine('poetryDynasty'), value: poetryDynasty, color: getColor() },
       { name: toLowerLine('poetryTitle'), value: poetryTitle, color: getColor() },
       { name: toLowerLine('courseSchedule'), value: courseSchedule, color: getColor() },
+      { name: toLowerLine('coinRate'), value:coinRate, color: getColor()},
     ].concat(weatherMessage)
       .concat(constellationFortune)
       .concat(dateDiffParams)
@@ -950,6 +982,7 @@ export const getAggregatedData = async () => {
     user.wxTemplateParams = wxTemplateParams
   }
 
+  //console.log('users:',JSON.stringify(users))
   return users
 }
 
